@@ -1,4 +1,4 @@
-﻿package com.accuweather.steps;
+package com.accuweather.steps;
 
 import com.accuweather.hooks.CucumberHooks;
 import com.accuweather.pages.BasePage;
