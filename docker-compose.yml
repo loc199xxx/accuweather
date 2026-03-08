@@ -1,0 +1,46 @@
+version: "3.9"
+# Mirrors: docker-compose.yml (Python project)
+
+services:
+  # Run scraper once
+  scraper:
+    build: .
+    command: >
+      mvn exec:java -Dexec.mainClass=com.accuweather.Scheduler -Dexec.args="--now"
+    environment:
+      - HEADLESS=true
+    volumes:
+      - ./reports:/app/reports
+      - ./credentials:/app/credentials
+
+  # Run daily scheduler
+  scheduler:
+    build: .
+    command: >
+      mvn exec:java -Dexec.mainClass=com.accuweather.Scheduler
+    environment:
+      - HEADLESS=true
+    volumes:
+      - ./reports:/app/reports
+      - ./credentials:/app/credentials
+
+  # Smoke tests (exclude @integration)
+  test:
+    build: .
+    command: mvn test
+    environment:
+      - HEADLESS=true
+    volumes:
+      - ./reports:/app/reports
+      - ./target:/app/target
+
+  # Integration tests (@integration only)
+  test-e2e:
+    build: .
+    command: mvn test -Dsurefire.suiteXmlFiles=testng-integration.xml
+    environment:
+      - HEADLESS=true
+    volumes:
+      - ./reports:/app/reports
+      - ./credentials:/app/credentials
+      - ./target:/app/target

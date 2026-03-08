@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="AccuWeather Integration Tests" verbose="1">
+    <test name="Integration Tests">
+        <classes>
+            <class name="com.accuweather.runners.TestRunner"/>
+        </classes>
+    </test>
+</suite>
