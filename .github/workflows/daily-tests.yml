@@ -2,9 +2,7 @@ name: Daily AccuWeather Tests
 
 on:
   schedule:
-    # Chạy lúc 00:00 UTC mỗi ngày (07:00 sáng giờ Việt Nam)
-    - cron: '*/5 * * * *'
-  # Cho phép chạy thủ công từ tab Actions trên GitHub
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
@@ -26,13 +24,14 @@ jobs:
       - name: Install Google Chrome
         uses: browser-actions/setup-chrome@v1
 
-      - name: Run tests (headless)
-        env:
-          BROWSER: chrome
-          HEADLESS: true
-          # Nếu dùng Google Sheets, thêm secret vào GitHub repo settings
-          # GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-        run: mvn test -Dsurefire.suiteXmlFiles=testng.xml -B
+      - name: Write Google credentials (neu co secret)
+        if: ${{ secrets.GOOGLE_CREDENTIALS_JSON != '' }}
+        run: |
+          mkdir -p config
+          echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > config/google_credentials.json
+
+      - name: Run smoke tests (headless)
+        run: mvn test -Dsurefire.suiteXmlFiles=testng.xml -Dheadless=true -B
 
       - name: Upload test reports
         if: always()
