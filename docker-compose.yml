@@ -1,46 +1,34 @@
-version: "3.9"
-# Mirrors: docker-compose.yml (Python project)
-
 services:
-  # Run scraper once
+
+  # Thu thap du lieu 1 lan (--now)
   scraper:
     build: .
-    command: >
-      mvn exec:java -Dexec.mainClass=com.accuweather.Scheduler -Dexec.args="--now"
-    environment:
-      - HEADLESS=true
+    command: mvn exec:java -Dexec.mainClass=com.accuweather.Scheduler -Dexec.args="--now" -Dheadless=true
     volumes:
       - ./reports:/app/reports
-      - ./credentials:/app/credentials
+      - ./config:/app/config
 
-  # Run daily scheduler
+  # Thu thap du lieu theo lich (14:59 hang ngay)
   scheduler:
     build: .
-    command: >
-      mvn exec:java -Dexec.mainClass=com.accuweather.Scheduler
-    environment:
-      - HEADLESS=true
+    command: mvn exec:java -Dexec.mainClass=com.accuweather.Scheduler -Dheadless=true
     volumes:
       - ./reports:/app/reports
-      - ./credentials:/app/credentials
+      - ./config:/app/config
 
-  # Smoke tests (exclude @integration)
+  # Smoke tests – khong can Google credentials (@smoke)
   test:
     build: .
-    command: mvn test
-    environment:
-      - HEADLESS=true
+    command: mvn test -Dheadless=true
     volumes:
       - ./reports:/app/reports
       - ./target:/app/target
 
-  # Integration tests (@integration only)
-  test-e2e:
+  # Integration tests – can Google credentials (@integration)
+  test-integration:
     build: .
-    command: mvn test -Dsurefire.suiteXmlFiles=testng-integration.xml
-    environment:
-      - HEADLESS=true
+    command: mvn test -Dsurefire.suiteXmlFiles=testng-integration.xml -Dheadless=true
     volumes:
       - ./reports:/app/reports
-      - ./credentials:/app/credentials
+      - ./config:/app/config
       - ./target:/app/target
