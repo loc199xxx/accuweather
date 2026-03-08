@@ -26,11 +26,21 @@ jobs:
       - name: Install Google Chrome
         uses: browser-actions/setup-chrome@v1
 
+      # - name: Write Google credentials (neu co secret)
+      #   if: ${{ secrets.GOOGLE_CREDENTIALS_JSON != '' }}
+      #   run: |
+      #     mkdir -p config
+      #     echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > config/google_credentials.
       - name: Write Google credentials (neu co secret)
-        if: ${{ secrets.GOOGLE_CREDENTIALS_JSON != '' }}
+        env:
+          # Bước 1: Gán secret vào biến môi trường
+          GOOGLE_CREDS: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        # Bước 2: Kiểm tra điều kiện if qua biến env
+        if: env.GOOGLE_CREDS != ''
         run: |
           mkdir -p config
-          echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > config/google_credentials.json
+          # Bước 3: Ghi vào file (Dùng dấu ngoặc kép bọc biến để không bị lỗi format JSON)
+          echo "$GOOGLE_CREDS" > config/google_credentials.json
 
       - name: Run smoke tests (headless)
         run: mvn test -Dsurefire.suiteXmlFiles=testng.xml -Dheadless=true -B
