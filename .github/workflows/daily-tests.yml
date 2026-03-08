@@ -22,7 +22,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-
+      - name: Generate Google Credentials File
+        env:
+          # Gọi dữ liệu từ Secret của GitHub gán vào biến môi trường tên là GCP_KEY
+          GCP_KEY: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          # 1. Tạo thư mục config (nếu trong code Java bạn đọc từ thư mục này)
+          mkdir -p config
+          
+          # 2. Đổ nội dung biến GCP_KEY ra thành 1 file vật lý
+          echo "$GCP_KEY" > config/google_credentials.json
       - name: Install Google Chrome
         uses: browser-actions/setup-chrome@v1
 
