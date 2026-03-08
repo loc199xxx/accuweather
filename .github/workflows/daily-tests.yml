@@ -3,7 +3,7 @@ name: Daily AccuWeather Tests
 on:
   schedule:
     # Chạy lúc 00:00 UTC mỗi ngày (07:00 sáng giờ Việt Nam)
-    - cron: '0 0 * * *'
+    - cron: '*/5 * * * *'
   # Cho phép chạy thủ công từ tab Actions trên GitHub
   workflow_dispatch:
 
