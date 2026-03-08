@@ -78,16 +78,36 @@ public class SearchPage extends BasePage {
 
     private WebElement findSearchInput() {
         String[] css = {
+                "#locationSearch",
+                "#location-search-input",
+                "input[id*='search' i]",
                 "input[name='query']",
-                "input[placeholder*='Search']",
-                "input[placeholder*='Address']",
-                ".search-input input"
+                "input[placeholder*='Search' i]",
+                "input[placeholder*='City' i]",
+                "input[placeholder*='Location' i]",
+                "input[placeholder*='Address' i]",
+                "input[aria-label*='Search' i]",
+                "[data-testid*='search'] input",
+                ".search-input input",
+                "header input[type='text']",
+                "nav input[type='text']",
+                "form input[type='text']",
+                "input[type='search']"
         };
         for (String sel : css) {
-            List<WebElement> els = driver.findElements(By.cssSelector(sel));
-            if (!els.isEmpty() && els.get(0).isDisplayed()) return els.get(0);
+            try {
+                List<WebElement> els = new WebDriverWait(driver, Duration.ofSeconds(3))
+                        .until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(sel)));
+                for (WebElement el : els) {
+                    if (el.isDisplayed()) return el;
+                }
+            } catch (Exception ignored) {}
         }
-        return driver.findElement(
-                By.xpath("//input[@type='text' and (@placeholder or @aria-label)]"));
+        // Last resort: any visible text input on the page
+        List<WebElement> all = driver.findElements(By.xpath("//input[@type='text' or @type='search']"));
+        for (WebElement el : all) {
+            if (el.isDisplayed()) return el;
+        }
+        throw new NoSuchElementException("Khong tim thay o nhap tim kiem");
     }
 }
