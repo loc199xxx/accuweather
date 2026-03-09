@@ -18,6 +18,8 @@ import java.util.List;
 
 public class BasePage {
 
+    private final By acceptCookieButton = By.id("ketch-banner-button-primary");
+
     protected static final Logger log = LoggerFactory.getLogger(BasePage.class);
     protected WebDriver driver;
 
@@ -95,29 +97,38 @@ public class BasePage {
         dismissGoogleAds();
     }
 
-    private void dismissCookieBanner() {
-        String[] xpaths = {
-                "//button[contains(text(),'Accept')]",
-                "//button[contains(text(),'I Understand')]",
-                "//button[contains(text(),'I Accept')]",
-                "//button[contains(text(),'Agree')]",
-                "//*[@data-testid='accept-btn']"
-        };
-        for (String xp : xpaths) {
-            try {
-                List<WebElement> btns = driver.findElements(By.xpath(xp));
-                if (!btns.isEmpty() && btns.get(0).isDisplayed()) {
-                    btns.get(0).click();
-                    log.info("Da dong banner cookie: {}", xp);
-                    sleep(1000);
-                    return;
-                }
-            } catch (Exception ignored) {}
+    public void dismissCookieBanner() {
+        log.info("Dang kiem tra banner cookie...");
+        
+        try {
+            // Dùng một Wait NGẮN (chỉ khoảng 3 giây) vì popup này có thể không xuất hiện.
+            // Tránh dùng wait mặc định 10s sẽ làm chậm test nếu banner không hiện.
+            WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(3));
+            
+            // Chờ nút Accept xuất hiện và có thể click được
+            WebElement btnAccept = shortWait.until(ExpectedConditions.elementToBeClickable(acceptCookieButton));
+            btnAccept.click();
+            
+            log.info("Da dong banner cookie thanh cong!");
+            
+            // (Tùy chọn) Chờ cho cái banner thực sự biến mất khỏi màn hình thay vì dùng Thread.sleep(1000)
+            shortWait.until(ExpectedConditions.invisibilityOfElementLocated(acceptCookieButton));
+            
+        } catch (TimeoutException e) {
+            // TimeoutException ở đây KHÔNG PHẢI LÀ LỖI.
+            // Nó chỉ có nghĩa là màn hình không có banner cookie. Ta vui vẻ đi tiếp.
+            log.info("Khong phat hien banner cookie, tiep tuc luong test.");
+            
+        } catch (ElementClickInterceptedException e) {
+            // Đưa luôn bài học "Xuyên giáp" ở câu trước vào đây phòng hờ bị quảng cáo che
+            log.warn("Nut cookie bi che khuat, dang dung JS de dong banner...");
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("arguments[0].click();", driver.findElement(acceptCookieButton));
+            log.info("Da dong banner cookie bang JS!");
         }
-        log.info("Khong phat hien banner cookie");
     }
 
-    private void dismissGoogleAds() {
+    protected void dismissGoogleAds() {
         try {
             List<WebElement> iframes = driver.findElements(
                     By.cssSelector("iframe[name*='google_ads_iframe'][name*='interstitial']"));
@@ -148,4 +159,35 @@ public class BasePage {
                 "document.querySelectorAll('iframe').forEach(function(f){f.remove()});");
         } catch (Exception ignored) {}
     }
+    protected void dismissGoogleAds2() {
+        log.info("Dang don dep quang cao Google neu co...");
+        
+        // 1. Phản xạ đầu tiên: Gửi phím ESCAPE (Rất hiệu quả với các popup Vignette toàn màn hình)
+        try {
+            new Actions(driver).sendKeys(Keys.ESCAPE).perform();
+            sleep(500);
+        } catch (Exception ignored) {}
+
+        // 2. Tuyệt chiêu JS: Ẩn/Xóa CHÍNH XÁC các phần tử quảng cáo (Không chém nhầm iframe thường)
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            
+            // Tìm các div bọc quảng cáo và các iframe quảng cáo của Google
+            String hideAdScript = 
+                "document.querySelectorAll('ins.adsbygoogle, div[id^=\"google_ads\"], iframe[name*=\"google_ads\"]').forEach(function(ad) { " +
+                "   ad.style.display = 'none'; " +  // Ẩn nó đi để không che khuất màn hình
+                "});";
+            js.executeScript(hideAdScript);
+            
+            // Bắt buộc gọi lệnh này ở khối finally ẩn (dù thành công hay lỗi vẫn phải về lại trang gốc)
+            driver.switchTo().defaultContent();
+            
+        } catch (Exception e) {
+            log.warn("Loi khi an quang cao: {}", e.getMessage());
+        } finally {
+            // Đảm bảo 100% driver không bị kẹt lại trong bất kỳ iframe nào
+            driver.switchTo().defaultContent();
+        }
+    }
+    
 }

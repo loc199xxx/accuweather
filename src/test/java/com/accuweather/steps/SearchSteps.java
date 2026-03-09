@@ -23,21 +23,22 @@ public class SearchSteps {
     @When("tim kiem {string}")
     public void tim_kiem(String cityName) {
         page().searchCity(cityName);
-        page().dismissAllPopups();
+        // page().dismissAllPopups();
     }
 
     @When("chon ket qua tim kiem dau tien")
     public void chon_ket_qua_dau_tien() {
         page().selectFirstResult();
-        page().dismissAllPopups();
+        // page().dismissAllPopups();
     }
 
     @Then("URL phai chua {string}")
     public void url_phai_chua(String slug) {
+        page().verifyUrlContainsKeyword(slug);
         page().waitForPageLoad();
-        String expected = slug;
-        String url = page().getCurrentUrl();
-        assertTrue(url.contains(expected),
-                "URL phai chua '" + expected + "', nhung nhan duoc: " + url);
+        // String expected = slug;
+        // String url = page().getCurrentUrl();
+        // assertTrue(url.contains(expected),
+        //         "URL phai chua '" + expected + "', nhung nhan duoc: " + url);
     }
 }

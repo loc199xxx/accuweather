@@ -4,9 +4,6 @@ import io.cucumber.testng.AbstractTestNGCucumberTests;
 import io.cucumber.testng.CucumberOptions;
 import org.testng.annotations.DataProvider;
 
-/**
- * TestNG + Cucumber runner for @integration tests.
- */
 @CucumberOptions(
         features = "src/test/resources/features",
         glue = {"com.accuweather.steps", "com.accuweather.hooks"},

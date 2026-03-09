@@ -1,11 +1,10 @@
-package com.accuweather;
+package com.accuweather.utils;
 
 import com.accuweather.config.City;
 import com.accuweather.config.Settings;
 import com.accuweather.models.WeatherData;
 import com.accuweather.pages.WeatherPage;
-import com.accuweather.utils.BrowserSetup;
-import com.accuweather.utils.GoogleSheetsClient;
+
 import org.openqa.selenium.WebDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +21,8 @@ public class Scheduler {
         if (args.length > 0 && "--now".equals(args[0])) {
             log.info("Chay thu thap ngay lap tuc (--now)");
             runDailyJob();
+            // Force JVM exit to kill lingering WebDriverManager background threads
+            System.exit(0);
         } else {
             scheduleDailyJob();
         }

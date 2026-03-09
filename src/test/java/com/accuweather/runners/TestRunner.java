@@ -12,7 +12,7 @@ import org.testng.annotations.DataProvider;
                 "html:target/cucumber-reports/cucumber.html",
                 "json:target/cucumber-reports/cucumber.json"
         },
-        tags = ""
+        tags = "@integration"
 )
 public class TestRunner extends AbstractTestNGCucumberTests {
 

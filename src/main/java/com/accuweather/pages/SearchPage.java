@@ -7,9 +7,13 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
-import java.util.List;
+// import java.util.List;
 
 public class SearchPage extends BasePage {
+
+    private final By searchInputLocator = By.xpath("//form[@class='search-form']/input");
+    // private final By firstResultLocator = By.xpath("//div[@class='locations-list content-module']/a[1]/p");
+    private final By firstResultLocator = By.xpath("//*[@class='results-container']/div[1]/p[1]");
 
     public SearchPage(WebDriver driver) {
         super(driver);
@@ -27,46 +31,26 @@ public class SearchPage extends BasePage {
         box.click();
         box.clear();
         box.sendKeys(cityName);
-        enter();
-        sleep(2000);
+        // enter();
         return this;
     }
 
     public void selectFirstResult() {
-        log.info("Dang chon ket qua tim kiem dau tien");
-        String[] selectors = {
-                ".search-results a",
-                ".locations-list a",
-                "a[href*='weather-forecast']",
-                "a[href*='current-weather']"
-        };
-        for (String sel : selectors) {
-            try {
-                List<WebElement> links = new WebDriverWait(driver, Duration.ofSeconds(10))
-                        .until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(sel)));
-                if (!links.isEmpty()) {
-                    WebElement first = links.get(0);
-                    log.info("Tim thay {} ket qua voi selector '{}', dang chuyen trang qua href", links.size(), sel);
-                    String href = first.getAttribute("href");
-                    if (href == null || href.isBlank()) {
-                        List<WebElement> childLinks = first.findElements(By.tagName("a"));
-                        if (!childLinks.isEmpty()) href = childLinks.get(0).getAttribute("href");
-                    }
-                    if (href != null && !href.isBlank()) {
-                        log.info("Dang chuyen den: {}", href);
-                        driver.get(href);
-                    } else {
-                        log.warn("Khong tim thay href, click truc tiep");
-                        first.click();
-                    }
-                    waitForPageLoad();
-                    return;
-                }
-            } catch (Exception ignored) {}
+        log.info("Dang click chon ket qua tim kiem dau tien...");
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebElement firstResult = wait.until(ExpectedConditions.elementToBeClickable(firstResultLocator));
+        try {
+            // log.info("Tim thay ket qua, dang chuyen den: {}", firstResult.getAttribute("href"));
+            firstResult.click();
+        } catch (ElementClickInterceptedException e) {
+            log.warn("Phan tu bi che khuat! Dang goi ham xoa Ads va thu lai...");
+            // 1. Dọn rác quảng cáo
+            dismissGoogleAds2();
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("arguments[0].click();", firstResult);
+            log.info("Ep click JS thanh cong!");
         }
-        log.warn("Khong tim thay ket qua tim kiem de click");
     }
-
     public String getCurrentUrl() {
         return driver.getCurrentUrl();
     }
@@ -77,37 +61,18 @@ public class SearchPage extends BasePage {
     }
 
     private WebElement findSearchInput() {
-        String[] css = {
-                "#locationSearch",
-                "#location-search-input",
-                "input[id*='search' i]",
-                "input[name='query']",
-                "input[placeholder*='Search' i]",
-                "input[placeholder*='City' i]",
-                "input[placeholder*='Location' i]",
-                "input[placeholder*='Address' i]",
-                "input[aria-label*='Search' i]",
-                "[data-testid*='search'] input",
-                ".search-input input",
-                "header input[type='text']",
-                "nav input[type='text']",
-                "form input[type='text']",
-                "input[type='search']"
-        };
-        for (String sel : css) {
-            try {
-                List<WebElement> els = new WebDriverWait(driver, Duration.ofSeconds(3))
-                        .until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(sel)));
-                for (WebElement el : els) {
-                    if (el.isDisplayed()) return el;
-                }
-            } catch (Exception ignored) {}
+        return new WebDriverWait(driver, Duration.ofSeconds(10))
+            .until(ExpectedConditions.visibilityOfElementLocated(searchInputLocator));
+    }   
+    public void verifyUrlContainsKeyword(String expectedKeyword) {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        try {
+            wait.until(ExpectedConditions.urlContains(expectedKeyword));
+            log.info("URL da thay doi va chua tu khoa: {}", expectedKeyword);
+        } catch (TimeoutException e) {
+            log.error("Sau 10 giay, URL van chua thay doi hoac khong chua tu khoa '{}'. URL hien tai: {}", 
+                      expectedKeyword, driver.getCurrentUrl());
+            throw e;
         }
-        // Last resort: any visible text input on the page
-        List<WebElement> all = driver.findElements(By.xpath("//input[@type='text' or @type='search']"));
-        for (WebElement el : all) {
-            if (el.isDisplayed()) return el;
-        }
-        throw new NoSuchElementException("Khong tim thay o nhap tim kiem");
     }
 }
