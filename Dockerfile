@@ -2,9 +2,9 @@ FROM maven:3.9-eclipse-temurin-17
 
 # Install Google Chrome
 RUN apt-get update \
-    && apt-get install -y wget gnupg2 \
-    && wget -qO /usr/share/keyrings/googlechrome.gpg \
-         https://dl.google.com/linux/linux_signing_key.pub \
+    && apt-get install -y wget gnupg2 curl \
+    && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
+         | gpg --dearmor -o /usr/share/keyrings/googlechrome.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/googlechrome.gpg] \
          http://dl.google.com/linux/chrome/deb/ stable main" \
          > /etc/apt/sources.list.d/chrome.list \

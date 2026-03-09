@@ -1,0 +1,76 @@
+name: AccuWeather Automation Workflow
+
+on:
+  # 1. Chạy tự động hàng ngày lúc 14:59 giờ Việt Nam (07:59 UTC)
+  schedule:
+    - cron: '59 7 * * *' 
+  
+  # 2. Chạy thủ công trên giao diện GitHub Actions
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Chọn tác vụ bạn muốn chạy:'
+        required: true
+        default: 'test-integration'
+        type: choice
+        options:
+          - scraper
+          - test
+          - test-integration
+
+jobs:
+  run-automation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Khởi tạo công cụ Buildx để hỗ trợ lưu Cache
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build Image và xử lý Cache (Kéo cache về nếu có, lưu cache mới lên)
+      - name: Build and Cache Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true # Bắt buộc phải có để Docker Compose bên dưới dùng được Image này
+          tags: accuweather-base:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Xử lý Google Credentials an toàn
+      - name: Prepare Google Credentials
+        env:
+          GOOGLE_CREDS: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        if: env.GOOGLE_CREDS != ''
+        run: |
+          mkdir -p config
+          echo "$GOOGLE_CREDS" > config/google_credentials.json
+
+      # Chạy lệnh Docker Compose dựa trên Trigger (Lịch trình hoặc Thủ công)
+      - name: Execute Docker Compose Service
+        run: |
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "Running scheduled data collection..."
+            docker compose run --rm scraper
+            
+            echo "Running scheduled integration tests..."
+            docker compose run --rm test-integration
+          else
+            echo "Running manual task: ${{ github.event.inputs.task }}"
+            docker compose run --rm ${{ github.event.inputs.task }}
+          fi
+
+      # Thu thập và tải lên các file báo cáo sau khi chạy xong
+      - name: Upload Test Reports & Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accuweather-results-${{ github.run_number }}
+          path: |
+            reports/
+            target/
+          retention-days: 14
